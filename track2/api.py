@@ -7,14 +7,13 @@ from google.genai import types
 import json
 import base64
 
-# --- FIX: ROBUST PATH LOADING ---
-# This finds the directory of 'api.py', goes up one level, and looks for '.env'
+
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 app = FastAPI()
 
-# Fetch the key from the environment
+
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 @app.post("/api/document-analyze")
@@ -33,7 +32,7 @@ async def analyze_document(request: Request, x_api_key: str = Header(None)):
         body = await request.json()
         client = genai.Client(api_key=GOOGLE_API_KEY)
         
-        # Requirement: AI-powered extraction [cite: 4, 8, 9]
+        
         prompt = """
         Analyze this document and return ONLY a JSON object:
         {
@@ -53,7 +52,7 @@ async def analyze_document(request: Request, x_api_key: str = Header(None)):
             config=types.GenerateContentConfig(response_mime_type="application/json")
         )
         
-        # 9. API Response Body (Success) [cite: 41, 44-54]
+       
         analysis = json.loads(response.text)
         return {
             "status": "success",
