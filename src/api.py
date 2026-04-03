@@ -1,20 +1,12 @@
-import uvicorn
 import os
-import json
-import base64
-from pathlib import Path
-from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Request
-from pydantic import BaseModel
 import base64
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from google import genai
 from dotenv import load_dotenv
 
-
+# Initialize the app
 load_dotenv()
-
 app = FastAPI(title="HCL AI Impact Buildathon - Track 2")
 
 
