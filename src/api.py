@@ -31,24 +31,32 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     if not GOOGLE_API_KEY:
-        raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not found.")
+        raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not found in environment.")
 
     try:
-        # 2. Clean Base64 String (Fixes 'Invalid Character' errors)
+        # 2. CLEAN THE BASE64 STRING (Fixes the 422 Error)
         b64_str = data.fileBase64
+        
+        # Remove prefix if user pasted 'data:application/pdf;base64,'
         if "," in b64_str:
             b64_str = b64_str.split(",")[1]
+            
+        # Remove all newlines/spaces that break JSON
         b64_str = "".join(b64_str.split())
         
+        # Convert to binary bytes
         file_bytes = base64.b64decode(b64_str)
 
-        # 3. Setup Gemini Client & Model
+        # 3. Setup Gemini Client (Using 1.5 Flash for better quota)
         client = genai.Client(api_key=GOOGLE_API_KEY)
-        
-        # Use 'gemini-2.0-flash' or 'gemini-1.5-flash'
         model_id = "gemini-1.5-flash" 
         
-        prompt = "Analyze this document and return a JSON with summary, entities, and sentiment."
+        prompt = """
+        Analyze this document and return ONLY a JSON object with:
+        "summary": a short summary,
+        "entities": names, dates, organizations, amounts,
+        "sentiment": Positive, Neutral, or Negative.
+        """
         
         mime_map = {"pdf": "application/pdf", "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg"}
         mime_type = mime_map.get(data.fileType.lower(), "application/octet-stream")
@@ -63,6 +71,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
             config=types.GenerateContentConfig(response_mime_type="application/json")
         )
         
+        # 5. Return Clean JSON
         return {
             "status": "success",
             "fileName": data.fileName,
@@ -74,5 +83,6 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
 
 if __name__ == "__main__":
     import uvicorn
+    # Use string reference to avoid multiprocessing issues on Railway
     port = int(os.environ.get("PORT", 8000)) 
-    uvicorn.run("api:app", host="0.0.0.0", port=port)
+    uvicorn.run("api:app", host="0.0.0.0", port=port, reload=True)
