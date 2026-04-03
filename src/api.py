@@ -5,7 +5,7 @@ import base64
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Request
-from pydantic import BaseModelimport os
+from pydantic import BaseModel
 import base64
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
