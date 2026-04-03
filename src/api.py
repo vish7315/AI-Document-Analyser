@@ -22,7 +22,10 @@ class DocumentRequest(BaseModel):
 
 @app.post("/api/document-analyze")
 async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None)):
-    
+    base64_str = request.fileBase64
+    if "," in base64_str:
+        base64_str = base64_str.split(",")[1]
+    base64_str = "".join(base64_str.split())
     if x_api_key != "sk_track2_987654321":
         raise HTTPException(status_code=401, detail="Unauthorized")
 
