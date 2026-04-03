@@ -50,6 +50,13 @@ async def analyze_document(request: DocumentRequest, x_api_key: str = Header(Non
     clean_base64 = "".join(raw_data.split())
 
     try:
+        raw_data = request.fileBase64
+        if "," in raw_data:
+            raw_data = raw_data.split(",")[1]
+            
+        clean_base64 = "".join(raw_data.split())
+
+        decoded_bytes = base64.b64decode(clean_base64)
         mime_type = "application/pdf" if request.fileType.lower() == "pdf" else "image/jpeg"
         
         prompt = """
