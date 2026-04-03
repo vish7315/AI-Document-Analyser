@@ -37,16 +37,15 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         raise HTTPException(status_code=500, detail="Server Configuration Error: GOOGLE_API_KEY not found.")
 
     try:
-        # 4. Clean Base64 String
+        # 4. Clean and Convert Base64 (Fixes the 422 and 500 errors)
         base64_str = data.fileBase64 
         if "," in base64_str:
             base64_str = base64_str.split(",")[1]
         base64_str = "".join(base64_str.split())
         
-        # 5. Convert to Bytes
         file_bytes = base64.b64decode(base64_str)
         
-        # 6. Setup Gemini Client
+        # 5. Setup Gemini Client
         client = genai.Client(api_key=GOOGLE_API_KEY)
         
         mime_map = {
@@ -71,7 +70,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         }
         """
         
-        # 7. Generate Content
+        # 6. Generate Content (Using binary data)
         response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
@@ -81,7 +80,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
             config=types.GenerateContentConfig(response_mime_type="application/json")
         )
         
-        # 8. Parse and Return
+        # 7. Parse and Return
         analysis = json.loads(response.text)
         
         return {
@@ -93,6 +92,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         }
 
     except Exception as e:
+        # This will show you exactly what went wrong in the response body
         return {
             "status": "error",
             "message": str(e)
