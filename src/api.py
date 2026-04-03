@@ -73,7 +73,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         
         # 7. Generate Content
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-1.5-flash", # Just the name, no extra paths
             contents=[
                 prompt,
                 types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
