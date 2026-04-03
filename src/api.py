@@ -76,7 +76,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
 
         # 8. Enhanced Detection via Gemini API
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-3-flash-preview",
             contents=[
                 prompt,
                 types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
