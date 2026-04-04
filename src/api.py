@@ -88,7 +88,9 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         return {
             "status": "success",
             "fileName": data.fileName,
-            "analysis": json.loads(response.text)
+            "summary": analysis.get("summary"),
+            "entities": analysis.get("entities"),
+            "sentiment": analysis.get("sentiment")
         }
 
     except Exception as e:
