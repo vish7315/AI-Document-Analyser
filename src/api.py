@@ -8,13 +8,13 @@ from pydantic import BaseModel
 from google import genai
 from google.genai import types
 
-# 1. Setup Environment
+
 base_dir = Path(__file__).resolve().parent.parent
 load_dotenv(base_dir / ".env")
 
 app = FastAPI(title="AI Document analyser")
 
-# 2. Configuration
+
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 API_KEY = "sk_track2_987654321"
 
@@ -36,7 +36,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         raise HTTPException(status_code=500, detail="Server Error: Google API Key missing")
 
     try:
-        # 3. Prepare Data
+        
         b64_str = data.fileBase64
         if "," in b64_str:
             b64_str = b64_str.split(",")[1]
@@ -51,8 +51,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         prompt = """Analyze this document and return ONLY a JSON object:
         {"summary": "...", "entities": {"names":[], "dates":[], "organizations":[], "amounts":[]}, "sentiment": "..."}"""
 
-        # 4. Multi-Model Fallback Logic (Prevents Crashing)
-        # We try the newest 2.0 model first, fall back to 1.5 if busy
+       
         models_to_try = ["gemini-2.0-flash","gemini-3-flash-preview", "gemini-1.5-flash"]
         last_error = ""
 
@@ -64,7 +63,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
                     config=types.GenerateContentConfig(response_mime_type="application/json")
                 )
                 
-                # If successful, parse and return immediately
+                
                 analysis_result = json.loads(response.text)
                 return {
                     "status": "success",
@@ -78,7 +77,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
                 last_error = str(e)
                 continue # Try the next model in the list
 
-        # If all models fail
+        
         return {"status": "error", "message": f"All models exhausted. Last error: {last_error}"}
 
     except Exception as e:
