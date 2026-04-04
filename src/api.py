@@ -12,11 +12,11 @@ from google.genai import types
 base_dir = Path(__file__).resolve().parent.parent
 load_dotenv(base_dir / ".env")
 
-# Title changed to 'AI Document analyser'
 app = FastAPI(title="AI Document analyser")
 
 # 2. Configuration
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+# This matches the key you entered in the HCL/GUVI tester
 API_KEY = "sk_track2_987654321"
 
 class DocumentRequest(BaseModel):
@@ -26,12 +26,11 @@ class DocumentRequest(BaseModel):
 
 @app.get("/")
 async def health_check():
-    # Message changed to 'API is running'
     return {"status": "online", "message": "API is running"}
 
 @app.post("/api/document-analyze")
 async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None)):
-    # 3. Security & Config Validation
+    # 3. Security Validation
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -45,7 +44,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
             b64_str = b64_str.split(",")[1]
         b64_str = "".join(b64_str.split())
         
-        # 5. Binary Conversion (Fixes 500 TypeError)
+        # 5. Binary Conversion
         file_bytes = base64.b64decode(b64_str)
 
         # 6. Initialize Gemini Client
@@ -61,22 +60,22 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
 
         # 7. AI Extraction Prompt
         prompt = """
-        Act as a document intelligence expert. Analyze this file and return ONLY a JSON object:
+        Analyze this document and return ONLY a JSON object:
         {
-            "summary": "3-sentence concise overview",
+            "summary": "a short summary",
             "entities": {
-                "names": ["People mentioned"],
-                "dates": ["Key dates found"],
-                "organizations": ["Companies or institutions"],
-                "amounts": ["Currency values"]
+                "names": [],
+                "dates": [],
+                "organizations": [],
+                "amounts": []
             },
             "sentiment": "Positive, Neutral, or Negative"
         }
         """
 
-        # 8. Enhanced Detection via Gemini API
+        # 8. Enhanced Detection via Gemini 3 Flash Preview
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-1.5-flash",
             contents=[
                 prompt,
                 types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
@@ -84,13 +83,16 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
             config=types.GenerateContentConfig(response_mime_type="application/json")
         )
 
-        # 9. Parse and Return
+        # 9. Parse Response Text into a Dictionary
+        analysis_result = json.loads(response.text)
+
+        # 10. Flattened Return (Required to pass HCL/GUVI Tester)
         return {
             "status": "success",
             "fileName": data.fileName,
-            "summary": analysis.get("summary"),
-            "entities": analysis.get("entities"),
-            "sentiment": analysis.get("sentiment")
+            "summary": analysis_result.get("summary"),
+            "entities": analysis_result.get("entities"),
+            "sentiment": analysis_result.get("sentiment")
         }
 
     except Exception as e:
@@ -99,4 +101,5 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
+    # String reference 'src.api:app' is recommended for Railway/Uvicorn
     uvicorn.run("src.api:app", host="0.0.0.0", port=port, reload=True)
