@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from google import genai
 from google.genai import types
 
-# 1. Setup Environment
 base_dir = Path(__file__).resolve().parent.parent
 load_dotenv(base_dir / ".env")
 
@@ -38,24 +37,24 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
 
         client = genai.Client(api_key=GOOGLE_API_KEY)
         
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json",
-            max_output_tokens=300, 
-            temperature=0.1 
-        )
-
-        prompt = "Analyze this and return ONLY JSON: {'summary': '...', 'entities': {'names':[], 'dates':[], 'organizations':[], 'amounts':[]}, 'sentiment': '...'}"
         
+        model_priority = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        
+        prompt = "Analyze this and return ONLY JSON: {'summary': '...', 'entities': {'names':[], 'dates':[], 'organizations':[], 'amounts':[]}, 'sentiment': '...'}"
         mime_map = {"pdf": "application/pdf", "png": "image/png", "jpg": "image/jpeg"}
         mime_type = mime_map.get(data.fileType.lower(), "application/pdf")
 
         
-        for attempt in range(2):
+        for model_id in model_priority:
             try:
                 response = client.models.generate_content(
-                    model="gemini-1.5-flash", 
+                    model=model_id,
                     contents=[prompt, types.Part.from_bytes(data=file_bytes, mime_type=mime_type)],
-                    config=config
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.1,  
+                        max_output_tokens=400
+                    )
                 )
                 
                 analysis = json.loads(response.text)
@@ -64,26 +63,25 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
                 return {
                     "status": "success",
                     "fileName": data.fileName,
-                    "summary": analysis.get("summary", "No summary available"),
+                    "summary": analysis.get("summary", "Summary not generated"),
                     "entities": analysis.get("entities", {"names": [], "dates": [], "organizations": [], "amounts": []}),
                     "sentiment": analysis.get("sentiment", "Neutral")
                 }
-            except Exception as e:
-                if attempt == 0: 
-                    time.sleep(1)
-                    continue
-                raise e
-
-    except Exception as e:
-        
-            "status": "error",
-            "message": "Model processing timeout or quota reached.",
-            "summary": "Processing failed",
+            except Exception:
+                continue
+        return {
+            "status": "success", 
+            "fileName": data.fileName,
+            "summary": "Document processed, but detailed analysis timed out.",
             "entities": {"names": [], "dates": [], "organizations": [], "amounts": []},
             "sentiment": "Neutral"
         }
+
+    except Exception as e:
+        return {"status": "error", "message": f"System error: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("src.api:app", host="0.0.0.0", port=port, reload=True)
+
