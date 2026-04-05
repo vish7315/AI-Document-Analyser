@@ -38,7 +38,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         client = genai.Client(api_key=GOOGLE_API_KEY)
         
         
-        model_priority = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        model_priority = ["gemini-2.0-flash","gemini-3-flash-preview","gemini-1.5-flash"]
         
         prompt = "Analyze this and return ONLY JSON: {'summary': '...', 'entities': {'names':[], 'dates':[], 'organizations':[], 'amounts':[]}, 'sentiment': '...'}"
         mime_map = {"pdf": "application/pdf", "png": "image/png", "jpg": "image/jpeg"}
