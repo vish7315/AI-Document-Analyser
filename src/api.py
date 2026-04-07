@@ -53,7 +53,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
         prompt = """JSON ONLY. 2-sentence summary. Extract: Names, Dates, Organizations, Amounts. 
         Format: {"summary":str, "entities":{"names":[], "dates":[], "organizations":[], "amounts":[]}, "sentiment":str}"""
 
-        for model_id in ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-3-flash-preview"]:
+        for model_id in [ "gemini-3-flash-preview","gemini-1.5-flash", "gemini-2.0-flash"]:
             try:
                 response = client.models.generate_content(
                     model=model_id,
@@ -61,7 +61,7 @@ async def analyze_document(data: DocumentRequest, x_api_key: str = Header(None))
                     config=types.GenerateContentConfig(
                         response_mime_type="application/json",
                         temperature=0.0,    
-                        max_output_tokens=250, 
+                        max_output_tokens=300, 
                         top_p=0.8
                     )
                 )
